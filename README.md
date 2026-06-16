@@ -1,65 +1,93 @@
-# atividade
-import turtle
+import pygame
+import sys
 
-# Configuração da janela
-tela = turtle.Screen()
-tela.title("Ping Pong Simples")
-tela.bgcolor("black")
-tela.setup(width=800, height=600)
+# Inicialização
+pygame.init()
 
-# Raquete esquerda
-raquete = turtle.Turtle()
-raquete.speed(0)
-raquete.shape("square")
-raquete.color("white")
-raquete.shapesize(stretch_wid=5, stretch_len=1)
-raquete.penup()
-raquete.goto(-350, 0)
+# Configuração da tela
+LARGURA = 800
+ALTURA = 600
+tela = pygame.display.set_mode((LARGURA, ALTURA))
+pygame.display.set_caption("Ping Pong")
+
+# Cores
+PRETO = (0, 0, 0)
+BRANCO = (255, 255, 255)
+
+# Raquete
+raquete = pygame.Rect(50, 250, 15, 100)
+velocidade_raquete = 7
 
 # Bola
-bola = turtle.Turtle()
-bola.speed(0)
-bola.shape("circle")
-bola.color("white")
-bola.penup()
-bola.goto(0, 0)
+bola = pygame.Rect(390, 290, 20, 20)
+vel_x = 5
+vel_y = 5
 
-# Movimento da bola
-bola.dx = 0.2
-bola.dy = 0.2
+# Placar
+placar = 0
+fonte = pygame.font.Font(None, 50)
 
-# Movimentos da raquete
-def subir():
-    y = raquete.ycor()
-    raquete.sety(y + 20)
-
-def descer():
-    y = raquete.ycor()
-    raquete.sety(y - 20)
-
-# Teclas
-tela.listen()
-tela.onkeypress(subir, "w")
-tela.onkeypress(descer, "s")
+# Relógio
+clock = pygame.time.Clock()
 
 # Loop principal
 while True:
-    tela.update()
 
-    bola.setx(bola.xcor() + bola.dx)
-    bola.sety(bola.ycor() + bola.dy)
+    # Eventos
+    for evento in pygame.event.get():
+        if evento.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
 
-    # Bater nas bordas superior e inferior
-    if bola.ycor() > 290 or bola.ycor() < -290:
-        bola.dy *= -1
+    # Movimento da raquete
+    teclas = pygame.key.get_pressed()
 
-    # Bater na raquete
-    if (bola.xcor() < -340 and
-        bola.xcor() > -350 and
-        raquete.ycor() - 50 < bola.ycor() < raquete.ycor() + 50):
-        bola.dx *= -1
+    if teclas[pygame.K_UP]:
+        raquete.y -= velocidade_raquete
 
-    # Reinicia a bola se passar da raquete
-    if bola.xcor() < -390 or bola.xcor() > 390:
-        bola.goto(0, 0)
-        bola.dx *= -1
+    if teclas[pygame.K_DOWN]:
+        raquete.y += velocidade_raquete
+
+    # Limites da raquete
+    if raquete.top < 0:
+        raquete.top = 0
+
+    if raquete.bottom > ALTURA:
+        raquete.bottom = ALTURA
+
+    # Movimento da bola
+    bola.x += vel_x
+    bola.y += vel_y
+
+    # Colisão com bordas superior e inferior
+    if bola.top <= 0 or bola.bottom >= ALTURA:
+        vel_y *= -1
+
+    # Colisão com a raquete
+    if bola.colliderect(raquete):
+        vel_x *= -1
+
+    # Bola saiu da área de jogo
+    if bola.left <= 0:
+        bola.center = (LARGURA // 2, ALTURA // 2)
+        vel_x = 5
+        vel_y = 5
+
+    # Ponto marcado
+    if bola.right >= LARGURA:
+        placar += 1
+        bola.center = (LARGURA // 2, ALTURA // 2)
+        vel_x = -5
+        vel_y = 5
+
+    # Desenho
+    tela.fill(PRETO)
+
+    pygame.draw.rect(tela, BRANCO, raquete)
+    pygame.draw.ellipse(tela, BRANCO, bola)
+
+    texto = fonte.render(f"Placar: {placar}", True, BRANCO)
+    tela.blit(texto, (300, 20))
+
+    pygame.display.update()
+    clock.tick(60)
